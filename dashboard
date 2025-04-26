@@ -1,0 +1,95 @@
+package com.example.intelligentirrigationsystem.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+
+@Composable
+fun DashboardScreen(
+    humidity: Float,
+    temperature: Float,
+    soilMoisture: Int,
+    rainfall: Float,
+    onManualIrrigationClick: () -> Unit,
+    onHistoryClick: () -> Unit,
+    onLogoutClick: () -> Unit,
+    onLocationClick: () -> Unit,
+) {
+    var isIrrigationOn by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Temperature: $temperature °C")
+        Text("Humidity: $humidity %")
+        Text("Soil Moisture: $soilMoisture")
+        Text("Rainfall: $rainfall mm")
+
+        Spacer(modifier = Modifier.height(30.dp))
+
+        // Manual Irrigation Button with color change
+        Button(
+            onClick = {
+                isIrrigationOn = !isIrrigationOn // Toggle the local button state
+                onManualIrrigationClick()        // Call the Firebase command
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (isIrrigationOn) Color.Red else Color(0xFF4CAF50) // Red if ON, Green if OFF
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(60.dp),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text(
+                text = if (isIrrigationOn) "Stop Irrigation" else "Start Irrigation",
+                color = Color.White
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Other buttons
+        Button(
+            onClick = { onHistoryClick() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text("View Sensor History")
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = { onLocationClick() },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text("Upload Location")
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Button(
+            onClick = { onLogoutClick() },
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text("Logout", color = Color.White)
+        }
+    }
+}
