@@ -1,0 +1,81 @@
+package com.example.intelligentirrigationsystem
+
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.*
+import com.google.firebase.firestore.FirebaseFirestore
+
+class FirebaseManager {
+
+    private val auth = FirebaseAuth.getInstance()
+    private val firestore = FirebaseFirestore.getInstance()
+    private val database = FirebaseDatabase.getInstance()
+
+    private val irrigationRef = database.getReference("irrigation/command")  // For irrigation control
+    private val sensorRef = database.getReference("sensor")                  // For sensor readings
+
+    // 🔥 User Login
+    fun login(email: String, password: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onSuccess()
+                } else {
+                    onFailure(task.exception?.message ?: "Login failed")
+                }
+            }
+    }
+
+    // 🔥 User Signup
+    fun signup(email: String, password: String, onSuccess: () -> Unit, onFailure: (String) -> Unit) {
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onSuccess()
+                } else {
+                    onFailure(task.exception?.message ?: "Signup failed")
+                }
+            }
+    }
+
+    // 🔥 Send Manual Irrigation Command
+    fun sendManualIrrigationCommand(turnOn: Boolean) {
+        val commandValue = if (turnOn) 1 else 0
+        irrigationRef.setValue(commandValue)
+            .addOnSuccessListener {
+                println("Command updated successfully: $commandValue")
+            }
+            .addOnFailureListener { exception ->
+                println("Failed to update command: ${exception.message}")
+            }
+    }
+
+    // 🔥 Get Real-Time Sensor Data
+    fun getSensorData(
+        onDataReceived: (humidity: Float, temperature: Float, soilMoisture: Int, rainfall: Float) -> Unit
+    ) {
+        sensorRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val humidity = snapshot.child("humidity").getValue(Float::class.java) ?: 0f
+                val temperature = snapshot.child("temperature").getValue(Float::class.java) ?: 0f
+                val soilMoisture = snapshot.child("soil_moisture").getValue(Int::class.java) ?: 0
+                val rainfall = snapshot.child("rainfall").getValue(Float::class.java) ?: 0f
+
+                onDataReceived(humidity, temperature, soilMoisture, rainfall)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                println("Failed to fetch sensor data: ${error.message}")
+            }
+        })
+    }
+
+    // 🔥 Logout User
+    fun logout() {
+        auth.signOut()
+    }
+
+    // 🔥 Get Current User ID
+    fun getCurrentUserId(): String {
+        return auth.currentUser?.uid ?: ""
+    }
+}
